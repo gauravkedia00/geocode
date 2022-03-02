@@ -30,16 +30,47 @@ def init_file_logger(logfile='/tmp/main.log', stderr=None):
         logger.addHandler(console)
 
 
+def parse_location():
+    """
+    Code below will parse place name.
+
+    """
+    parser = argparse.ArgumentParser(allow_abbrev=False, conflict_handler='resolve')
+    parser.add_argument("--place", type=str, help="Place Name", required=True)
+    arguments = parser.parse_args()
+    arguments = vars(arguments)
+    return arguments['place']
+
+
+def get_geocode_url():
+    """
+    Code below will retrieve url to get latitude and longitude
+    for a given place.
+
+    """
+    url = "https://geocode.xyz/{place}?json=1"
+    url = url.format(place=parse_location())
+    return url
+
+
+def get_temp_url(latitude, longitude):
+    """
+    Code below will retrieve url to get temperature data
+
+    """
+    url = "https://api.open-meteo.com/v1/forecast?" + \
+            "latitude={latt}&longitude={longt}&hourly=temperature_2m"
+    url = url.format(latt=latitude, longt=longitude)
+    return url
+
+
 def get_temp(latitude, longitude):
     """
     Code below will retrieve temperature data
 
     """
     try:
-        uri = "https://api.open-meteo.com/v1/forecast?" + \
-                "latitude={latt}&longitude={longt}&hourly=temperature_2m"
-        uri = uri.format(latt=latitude, longt=longitude)
-        response = request.urlopen(uri)
+        response = request.urlopen(get_temp_url(latitude, longitude))
         data = ast.literal_eval(response.read().decode("UTF-8"))
         if 'error' in data:
             print("Invalid Input, please try again")
@@ -63,20 +94,12 @@ def get_temp(latitude, longitude):
 def main():
     """
     Code below will retrieve the latitude and longitude info
-    from a place name.
+    for a place name.
 
     """
-    parser = argparse.ArgumentParser(allow_abbrev=False, conflict_handler='resolve')
-    parser.add_argument("--place", type=str, help="Place Name", required=True)
-    arguments = parser.parse_args()
-
     #init_file_logger(logfile=LOGFILE)
-
-    arguments = vars(arguments)
     try:
-        uri = "https://geocode.xyz/{place}?json=1"
-        uri = uri.format(place=arguments['place'])
-        response = request.urlopen(uri)
+        response = request.urlopen(get_geocode_url())
         data = ast.literal_eval(response.read().decode("UTF-8"))
         if 'error' in data:
             print("Invalid Input, please try again")
